@@ -45,7 +45,11 @@ final class Translator
     private $from;
     private $to;
     private $charset;
-    private $exclude = ['|', '"', '%d', '%s', '$d', '$s', '$t', '$v', '<', '>'];
+    private $exclude = [
+        ' | ', '|', '"', '%d', '%s', '$d',
+        '$s', '$t', '$v', '<', '>',
+        '«', '»', '“', '”', '‘', '’'
+    ];
     private $max = 32;
 
     /**
@@ -96,21 +100,31 @@ final class Translator
      *
      * @access public
      * @return array
+     * @todo
      */
     public function translate() : array
     {
-        $group = $this->group(
-            Sorter::group($this->lines, true)
-        );
+        $sort = Sorter::group($this->lines, true);
+        $pre  = $this->preTranslate($sort);
 
-        $group = $this->preTranslate($group);
-        var_dump($group);die;
+        foreach ($pre as $sub) {
+            foreach ($sub as $key => $translate) {
+                if ( isset($sort[$key]) && isset($sort[$key]['after']) ) {
+                    foreach ($sort[$key]['after'] as $n => $line) {
+                        if ( Sorter::isString($line) ) {
+                            $msgstr = 'msgstr "' . $translate . '"';
+                            $sort[$key]['after'][$n] = $msgstr;
+                        }
+                    }
+                }
+            }
+        }
 
-        return Sorter::merge($group);
+        return Sorter::merge($sort);
     }
 
     /**
-     * Group lines.
+     * Group sorted lines.
      *
      * @access private
      * @param array $lines
@@ -123,7 +137,7 @@ final class Translator
         $counter = 0;
 
         foreach ($lines as $key => $part) {
-    
+                       
             // Parse Id
             $msgid = Sorter::extractId($part['msgid']);
     
@@ -150,7 +164,7 @@ final class Translator
                     $msgstr = Sorter::extractString($line);
                     if ( empty($msgstr) ) {
     
-                        $pointer[] = [$key => strip_tags($msgid)];
+                        $pointer[$key] = strip_tags($msgid);
                         $counter++;
     
                         if ( $counter == 10 ) {
@@ -175,26 +189,28 @@ final class Translator
      * Translate strings using API.
      *
      * @access private
-     * @param array $strings
+     * @param array $sort
      * @return array
      */
-    private function preTranslate(array $group) : array
+    private function preTranslate(array $sort) : array
     {
-        foreach ($group as &$sub) {
-            $flat = [];
-            foreach ($sub as $item) {
-                foreach ($item as $value) {
-                    $flat[] = '"' . $value . '"';
-                }
-            }
-            $sub = implode(' | ', $flat);
+        $group = $this->group($sort);
+        $translate = [];
+
+        foreach ($group as $key => $sub) {
+            $values = array_values($sub);
+            $values = implode('" | "', $values);
+            $values = '"' . $values . '"';
+            $translate[$key] = $this->fetch($values);
         }
 
-        foreach ($group as $key => $query) {
-            $group[$key] = $this->fetch($query);
+        foreach ($group as $key => $sub) {
+            $temp   = $translate[$key];
+            $keys   = array_keys($sub);
+            $values = array_values($temp);
+            $temp   = array_combine($keys, $values);
+            $group[$key] = $temp;
         }
-
-        var_dump($group);die;
 
         return $group;
     }
@@ -218,7 +234,13 @@ final class Translator
             $data = $data[0] ?? [];
             foreach ($data as $translation) {
                 $translation = $translation[0] ?? '';
-                $group[] = str_replace(' | ', '', $translation);
+                $translation = str_replace(
+                    $this->exclude, '', $translation
+                );
+                $translation = trim($translation);
+                if ( $translation ) {
+                    $group[] = $translation;
+                }
             }
         }
 

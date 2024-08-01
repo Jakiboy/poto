@@ -67,3 +67,15 @@ msgstr ""
 #: inc/admin/settings:374
 msgid "+ Add media"
 msgstr ""
+
+#: inc/admin/settings:374
+msgid "Test"
+msgstr ""
+
+#: inc/admin/settings:374
+msgid "Append"
+msgstr ""
+
+#: inc/admin/settings:374
+msgid "Forgot password?"
+msgstr ""
