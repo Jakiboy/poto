@@ -236,6 +236,8 @@ class Poto
                 $this->charset
             ))->translate();
         }
+
+        $this->write();
     }
 
     /**
@@ -284,7 +286,7 @@ class Poto
     {
         $break = static::REGEX['sanitize-break'];
         $this->content = trim($this->content);
-        $this->content = preg_replace($break, "\n\n", $this->content);
+        $this->content = preg_replace($break,  "\n\n", $this->content);
     }
 
     /**
@@ -456,7 +458,28 @@ class Poto
      */
     protected function write() : void
     {
+        if ( !$this->override ) {
+            $this->file = "processed-{$this->file}";
+        }
 
+        if ( !$this->writeFile($this->file) ) {
+            if ( $this->throw ) {
+                throw new IoException("Unable to write PO file: {$this->file}");
+            }
+        }
+
+        // Write header
+        $header = implode("\n", $this->header);
+        $this->writeFile($this->file, "{$header}\n", true);
+
+        // Write lines
+        foreach ($this->lines as $line) {
+            if ( $line === '' ) {
+                $this->writeFile($this->file, "\n", true);
+            } else {
+                $this->writeFile($this->file, "{$line}\n", true);
+            }
+        }
     }
 
     /**
@@ -468,10 +491,28 @@ class Poto
     protected function log(?string $error = null) : void
     {
         $error = ($error) ? $this->setError($error) : $this->getError();
-        if ( !@file_put_contents($this->log, $error) ) {
+        if ( !$this->writeFile($this->log, $error) ) {
             if ( $this->throw ) {
                 throw new IoException("Unable to write to log file: {$this->log}");
             }
         }
+    }
+
+    /**
+     * Write file.
+     *
+     * @access protected
+     * @param string $file
+     * @param string $content
+     * @param bool $append
+     * @return bool
+     */
+    protected function writeFile(string $file, ?string $content = null, bool $append = false) : bool
+    {
+        $flags = ($append) ? 8 : 0;
+        if ( @file_put_contents($file, $content, $flags) ) {
+            return true;
+        }
+        return false;
     }
 }

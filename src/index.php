@@ -8,12 +8,10 @@ include './inc/Translator.php';
 include './inc/Sorter.php';
 include './Poto.php';
 
-$poto = new Poto([
-    'translate' => true,
-]);
+$poto = new Poto();
 
 $poto->read('file.po')->process();
 
 if ( $poto->error()) {
-    echo $poto->getError();
+    die($poto->getError());
 }
