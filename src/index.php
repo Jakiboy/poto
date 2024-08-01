@@ -8,7 +8,9 @@ include './inc/Translator.php';
 include './inc/Sorter.php';
 include './Poto.php';
 
-$poto = new Poto();
+$poto = new Poto([
+    'translate' => true
+]);
 
 $poto->read('file.po')->process();
 
