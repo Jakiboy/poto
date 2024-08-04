@@ -81,10 +81,10 @@ class Poto
     public function __construct(array $args = [])
     {
         $args = array_merge([
-            'repair'    => true,
             'editor'    => true,
             'sort'      => true,
             'format'    => true,
+            'repair'    => false,
             'throw'     => false,
             'translate' => false,
             'override'  => false,
@@ -274,6 +274,17 @@ class Poto
     public function getError(string $sep = "\n") : string
     {
         return (string)implode($sep, $this->error);
+    }
+
+    /**
+     * Get array error.
+     *
+     * @access public
+     * @return array
+     */
+    public function getArrayError() : array
+    {
+        return $this->error;
     }
 
     /**
