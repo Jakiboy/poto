@@ -60,8 +60,12 @@ final class Translator
      * @param string $to
      * @param string $charset
      */
-    public function __construct(array $lines = [], string $from = self::FROM, string $to = self::TO, string $charset = self::CHARSET)
-    {
+    public function __construct(
+        array $lines = [],
+        string $from = self::FROM,
+        string $to = self::TO,
+        string $charset = self::CHARSET
+    ) {
         $this->lines   = $lines;
         $this->from    = $from;
         $this->to      = $to;
