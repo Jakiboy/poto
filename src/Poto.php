@@ -1,8 +1,8 @@
 <?php
 /**
  * @author    : Jakiboy
- * @version   : 1.0.0
- * @copyright : (c) 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @version   : 0.1.0
+ * @copyright : (c) 2025 Jihad Sinnaour <me@jihadsinnaour.com>
  * @link      : https://jakiboy.github.io/poto/
  * @license   : MIT
  */
@@ -10,10 +10,12 @@
 namespace Jakiboy;
 
 use Jakiboy\Poto\exc\{
-    IoException, TranslateException
+    IoException,
+    TranslateException
 };
 use Jakiboy\Poto\inc\{
-    Sorter, Translator
+    Sorter,
+    Translator
 };
 
 class Poto
@@ -80,7 +82,32 @@ class Poto
      */
     public function __construct(array $args = [])
     {
-        $args = array_merge([
+        $args = $this->initializeArgs($args);
+
+        // Internal args
+        $this->hasRepair = (bool)$args['repair'];
+        $this->hasEditor = (bool)$args['editor'];
+        $this->throw = (bool)$args['throw'];
+        $this->override = (bool)$args['override'];
+
+        // External args
+        $this->sort = (bool)$args['sort'];
+        $this->format = (bool)$args['format'];
+        $this->translate = (bool)$args['translate'];
+        $this->charset = (string)$args['charset'];
+        $this->from = (string)$args['from'];
+        $this->to = (string)$args['to'];
+    }
+
+    /**
+     * Initialize arguments with default values.
+     *
+     * @param array $args
+     * @return array
+     */
+    private function initializeArgs(array $args) : array
+    {
+        return array_merge([
             'editor'    => true,
             'sort'      => true,
             'format'    => true,
@@ -92,20 +119,6 @@ class Poto
             'from'      => Translator::FROM,
             'to'        => Translator::TO
         ], $args);
-
-        // Internal args
-        $this->hasRepair = (bool)$args['repair'];
-        $this->hasEditor = (bool)$args['editor'];
-        $this->throw     = (bool)$args['throw'];
-        $this->override  = (bool)$args['override'];
-
-        // External args
-        $this->sort      = (bool)$args['sort'];
-        $this->format    = (bool)$args['format'];
-        $this->translate = (bool)$args['translate'];
-        $this->charset   = (string)$args['charset'];
-        $this->from      = (string)$args['from'];
-        $this->to        = (string)$args['to'];
     }
 
     /**
@@ -132,40 +145,51 @@ class Poto
     {
         $this->file = str_replace('\\', '/', $file);
 
-        if ( !file_exists($this->file) ) {
-
-            $error = "File not found: {$this->file}";
-            if ( $this->throw ) {
-                throw new IoException($error);
-
-            } else {
-                $this->log($error);
-            }
-
-        } elseif ( !is_readable($this->file) ) {
-
-            $error = "File not readable: {$this->file}";
-            if ( $this->throw ) {
-                throw new IoException($error);
-
-            } else {
-                $this->log($error);
-            }
+        if ( !$this->validateFileExists($this->file) ) {
+            return $this;
         }
 
         if ( !($this->content = @file_get_contents($this->file)) ) {
-
             $error = "File empty or invalid: {$this->file}";
             if ( $this->throw ) {
                 throw new IoException($error);
-
             } else {
                 $this->log($error);
             }
-
         }
 
         return $this;
+    }
+
+    /**
+     * Validate if the file exists and is readable.
+     *
+     * @param string $file
+     * @return bool
+     */
+    private function validateFileExists(string $file) : bool
+    {
+        if ( !file_exists($file) ) {
+            $error = "File not found: {$file}";
+            if ( $this->throw ) {
+                throw new IoException($error);
+            } else {
+                $this->log($error);
+            }
+            return false;
+        }
+
+        if ( !is_readable($file) ) {
+            $error = "File not readable: {$file}";
+            if ( $this->throw ) {
+                throw new IoException($error);
+            } else {
+                $this->log($error);
+            }
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -188,7 +212,7 @@ class Poto
             $this->setEditor();
         }
 
-        // Repare message Id
+        // Repair message Id
         if ( $this->hasRepair ) {
             $this->repairMessageId();
         }
@@ -218,9 +242,7 @@ class Poto
 
         // Translate PO file
         if ( $this->translate ) {
-
             if ( !$this->format || !$this->sort ) {
-
                 $error = 'Translation requires sort format';
                 if ( $this->throw ) {
                     throw new TranslateException($error);
@@ -248,7 +270,7 @@ class Poto
      */
     public function error() : bool
     {
-        return (count($this->error) > 0);
+        return count($this->error) > 0;
     }
 
     /**
@@ -297,7 +319,7 @@ class Poto
     {
         $break = static::REGEX['sanitize-break'];
         $this->content = trim($this->content);
-        $this->content = preg_replace($break,  "\n\n", $this->content);
+        $this->content = preg_replace($break, "\n\n", $this->content);
     }
 
     /**
@@ -310,7 +332,7 @@ class Poto
     protected function sanitizeSpace(string $line) : string
     {
         $space = static::REGEX['sanitize-space'];
-        $line  = trim($line);
+        $line = trim($line);
         return preg_replace($space, ' ', $line);
     }
 
@@ -387,7 +409,7 @@ class Poto
     protected function parseLines() : void
     {
         $this->lines = explode("\n", $this->content);
-        $this->lines = array_map(function($line) {
+        $this->lines = array_map(function ($line) {
             return $this->sanitizeSpace($line);
         }, $this->lines);
     }
@@ -470,7 +492,8 @@ class Poto
     protected function write() : void
     {
         if ( !$this->override ) {
-            $this->file = "processed-{$this->file}";
+            $pathInfo = pathinfo($this->file);
+            $this->file = $pathInfo['dirname'] . "/processed-" . $pathInfo['basename'];
         }
 
         if ( !$this->writeFile($this->file) ) {
@@ -501,7 +524,7 @@ class Poto
      */
     protected function log(?string $error = null) : void
     {
-        $error = ($error) ? $this->setError($error) : $this->getError();
+        $error = $error ? $this->setError($error) : $this->getError();
         if ( !$this->writeFile($this->log, $error) ) {
             if ( $this->throw ) {
                 throw new IoException("Unable to write to log file: {$this->log}");
@@ -520,7 +543,7 @@ class Poto
      */
     protected function writeFile(string $file, ?string $content = null, bool $append = false) : bool
     {
-        $flags = ($append) ? 8 : 0;
+        $flags = $append ? 8 : 0;
         if ( @file_put_contents($file, $content, $flags) ) {
             return true;
         }

@@ -1,0 +1,13 @@
+# Text break
+* text=auto
+* text eol=lf
+
+# Archive ignore
+/.github export-ignore
+/.static export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+*.yml export-ignore
+*.sh export-ignore
+*.po export-ignore
+*.code-workspace export-ignore
