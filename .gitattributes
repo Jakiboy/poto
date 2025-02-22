@@ -1,7 +1,6 @@
 # Text break
 * text=auto
 * text eol=lf
-
 # Archive ignore
 /.github export-ignore
 /.static export-ignore
