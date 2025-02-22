@@ -1,5 +1,5 @@
 # poto
-Open-source & Free PO files translator (CLI)
+Open-source & Free PO files translator
 
 ## ⚡ Installing
 
