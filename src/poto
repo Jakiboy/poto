@@ -1,0 +1,61 @@
+<?php
+/**
+ * @author    : Jakiboy
+ * @version   : 0.1.0
+ * @copyright : (c) 2025 Jihad Sinnaour <me@jihadsinnaour.com>
+ * @link      : https://jakiboy.github.io/poto/
+ * @license   : MIT
+ */
+
+namespace Jakiboy;
+
+use Jakiboy\Poto\inc\Translator;
+
+include __DIR__ . '/exc/IoException.php';
+include __DIR__ . '/exc/TranslateException.php';
+include __DIR__ . '/inc/Translator.php';
+include __DIR__ . '/inc/Sorter.php';
+include __DIR__ . '/Poto.php';
+
+// Display usage
+function displayUsage()
+{
+    echo "Usage: php poto --file=<file.po> [--charset=<charset>] [--from=<from>] [--to=<to>]\n";
+    exit(1);
+}
+
+// Parse CLI arguments
+$options = getopt("", [
+    "file:",
+    "translate",
+    "sort",
+    "format",
+    "repair",
+    "throw",
+    "override",
+    "charset:",
+    "from:",
+    "to:"
+]);
+
+if ( !isset($options['file']) ) {
+    displayUsage();
+}
+
+$file = $options['file'];
+$args = [
+    'translate' => true,
+    'charset'   => $options['charset'] ?? Translator::CHARSET,
+    'from'      => $options['from'] ?? Translator::FROM,
+    'to'        => $options['to'] ?? Translator::TO
+];
+
+$poto = new Poto($args);
+$poto->read($file)->process();
+
+if ( $poto->error() ) {
+    echo $poto->getError();
+    exit(1);
+}
+
+exit(0);

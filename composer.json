@@ -1,0 +1,24 @@
+{
+  "name": "Jakiboy/poto",
+  "version" : "0.1.0",
+  "type": "library",
+  "description": "Open-source & Free PO files translator (CLI)",
+  "keywords": ["Translation",".po",".mo",".pot","poedit"],
+  "homepage": "https://floatphp.com",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Jihad Sinnaour",
+      "email": "me@jihadsinnaour.com",
+      "role": "Founder"
+    }
+  ],
+  "require": {
+    "php": ">=8.2"
+  },
+  "autoload": {
+    "psr-4" : {
+      "Jakiboy\\Poto\\" : "src/"
+    }
+  }
+}

@@ -1,8 +1,8 @@
 <?php
 /**
  * @author    : Jakiboy
- * @version   : 1.0.0
- * @copyright : (c) 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @version   : 0.1.0
+ * @copyright : (c) 2025 Jihad Sinnaour <me@jihadsinnaour.com>
  * @link      : https://jakiboy.github.io/poto/
  * @license   : MIT
  */
@@ -46,14 +46,28 @@ final class Translator
     private $to;
     private $charset;
     private $exclude = [
-        ' | ', '|', '"', '%d', '%s', '$d',
-        '$s', '$t', '$v', '<', '>',
-        '«', '»', '“', '”', '‘', '’'
+        ' | ',
+        '|',
+        '"',
+        '%d',
+        '%s',
+        '$d',
+        '$s',
+        '$t',
+        '$v',
+        '<',
+        '>',
+        '«',
+        '»',
+        '“',
+        '”',
+        '‘',
+        '’'
     ];
     private $max = 32;
 
     /**
-     * Init translator.
+     * Initialize the translator.
      *
      * @param array $lines
      * @param string $from
@@ -66,9 +80,9 @@ final class Translator
         string $to = self::TO,
         string $charset = self::CHARSET
     ) {
-        $this->lines   = $lines;
-        $this->from    = $from;
-        $this->to      = $to;
+        $this->lines = $lines;
+        $this->from = $from;
+        $this->to = $to;
         $this->charset = $charset;
     }
 
@@ -104,73 +118,72 @@ final class Translator
      *
      * @access public
      * @return array
-     * @todo
      */
     public function translate() : array
     {
-        $sort = Sorter::group($this->lines, true);
-        $pre  = $this->preTranslate($sort);
+        $sortedLines = Sorter::group($this->lines, true);
+        $preTranslated = $this->preTranslate($sortedLines);
 
-        foreach ($pre as $sub) {
-            foreach ($sub as $key => $translate) {
-                if ( isset($sort[$key]) && isset($sort[$key]['after']) ) {
-                    foreach ($sort[$key]['after'] as $n => $line) {
+        foreach ($preTranslated as $sub) {
+            foreach ($sub as $key => $translation) {
+                if ( isset($sortedLines[$key]) && isset($sortedLines[$key]['after']) ) {
+                    foreach ($sortedLines[$key]['after'] as $n => $line) {
                         if ( Sorter::isString($line) ) {
-                            $msgstr = 'msgstr "' . $translate . '"';
-                            $sort[$key]['after'][$n] = $msgstr;
+                            $msgstr = 'msgstr "' . $translation . '"';
+                            $sortedLines[$key]['after'][$n] = $msgstr;
                         }
                     }
                 }
             }
         }
 
-        return Sorter::merge($sort);
+        return Sorter::merge($sortedLines);
     }
 
     /**
-     * Group sorted lines.
+     * Group sorted lines for translation.
      *
      * @access private
      * @param array $lines
      * @return array
      */
-    private function group(array $lines) : array
+    private function groupLines(array $lines) : array
     {
-        $group   = [];
+        $group = [];
         $pointer = [];
         $counter = 0;
 
         foreach ($lines as $key => $part) {
-                       
+
             // Parse Id
             $msgid = Sorter::extractId($part['msgid']);
-    
+
             // Skip long
             if ( strlen($msgid) > $this->max ) {
                 continue;
             }
-    
+
             // Exclude strings
             if ( $this->isExcluded($msgid) ) {
                 continue;
             }
-    
+
             if ( !isset($part['after']) ) {
                 continue;
             }
-    
+
             // Set string to translate
             foreach ($part['after'] as $line) {
-    
+
                 if ( !Sorter::isPluralString($line) ) {
 
                     // Set string to translate
                     $msgstr = Sorter::extractString($line);
                     if ( empty($msgstr) ) {
-    
+
                         $pointer[$key] = strip_tags($msgid);
                         $counter++;
-    
+
                         if ( $counter == 10 ) {
                             $group[] = $pointer;
                             $pointer = [];
@@ -190,82 +203,78 @@ final class Translator
     }
 
     /**
-     * Translate strings using API.
+     * Translate strings using the API.
      *
      * @access private
-     * @param array $sort
+     * @param array $sortedLines
      * @return array
      */
-    private function preTranslate(array $sort) : array
+    private function preTranslate(array $sortedLines) : array
     {
-        $group = $this->group($sort);
-        $translate = [];
+        $groupedLines = $this->groupLines($sortedLines);
+        $translations = [];
 
-        foreach ($group as $key => $sub) {
-            $values = array_values($sub);
-            $values = implode('" | "', $values);
-            $values = '"' . $values . '"';
-            $translate[$key] = $this->fetch($values);
+        foreach ($groupedLines as $key => $sub) {
+            $values = implode('" | "', array_values($sub));
+            $translations[$key] = $this->fetchTranslations('"' . $values . '"');
         }
 
-        foreach ($group as $key => $sub) {
-            $temp   = $translate[$key];
-            $keys   = array_keys($sub);
-            $values = array_values($temp);
-            $temp   = array_combine($keys, $values);
-            $group[$key] = $temp;
+        foreach ($groupedLines as $key => $sub) {
+            $temp = $translations[$key];
+            $keys = array_keys($sub);
+            $groupedLines[$key] = array_combine($keys, $temp);
         }
 
-        return $group;
+        return $groupedLines;
     }
 
     /**
-     * Fetch strings translations from API.
+     * Fetch translations from the API.
      *
      * @access private
      * @param string $query
      * @return array
      */
-    private function fetch(string $query) : array
+    private function fetchTranslations(string $query) : array
     {
         sleep(1);
 
-        $group = [];
-        $url   = $this->getUrl($query);
+        $translations = [];
+        $url = $this->buildApiUrl($query);
 
-        if ( ($response = @file_get_contents($url)) ) {
-            $data = json_decode($response, true);
-            $data = $data[0] ?? [];
+        if ( $response = @file_get_contents($url) ) {
+            $data = json_decode($response, true)[0] ?? [];
             foreach ($data as $translation) {
-                $translation = $translation[0] ?? '';
-                $translation = str_replace(
-                    $this->exclude, '', $translation
-                );
-                $translation = trim($translation);
-                if ( $translation ) {
-                    $group[] = $translation;
+                $translation = str_replace($this->exclude, '', $translation[0] ?? '');
+                if ( $translation = trim($translation) ) {
+                    $translations[] = $translation;
                 }
             }
         }
 
-        return $group;
+        return $translations;
     }
 
     /**
-     * Get translation API URL.
+     * Build the API URL for translation.
      *
      * @access private
      * @param string $query
      * @return string
      */
-    private function getUrl(string $query) : string
+    private function buildApiUrl(string $query) : string
     {
         $api = self::API;
         $url = $api['url'];
         unset($api['url']);
 
-        $api = str_replace([
-            '{from}', '{to}', '{charset}', '{query}'],
+        $api = str_replace(
+            [
+                '{from}',
+                '{to}',
+                '{charset}',
+                '{query}'
+            ],
             [$this->from, $this->to, $this->charset, $query],
             $api
         );

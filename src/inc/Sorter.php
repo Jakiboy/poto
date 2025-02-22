@@ -1,8 +1,8 @@
 <?php
 /**
  * @author    : Jakiboy
- * @version   : 1.0.0
- * @copyright : (c) 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @version   : 0.1.0
+ * @copyright : (c) 2025 Jihad Sinnaour <me@jihadsinnaour.com>
  * @link      : https://jakiboy.github.io/poto/
  * @license   : MIT
  */
@@ -27,7 +27,7 @@ final class Sorter
      */
     public function __construct(array $lines = [], bool $format = true)
     {
-        $this->lines  = $lines;
+        $this->lines = $lines;
         $this->format = $format;
     }
 
@@ -39,30 +39,30 @@ final class Sorter
      */
     public function sort() : array
     {
-        $group = self::group($this->lines, $this->format);
-        ksort($group);
-        return self::merge($group);
+        $groupedLines = self::group($this->lines, $this->format);
+        ksort($groupedLines);
+        return self::merge($groupedLines);
     }
 
     /**
      * Merge PO lines.
      *
      * @access public
-     * @param array $group
+     * @param array $groupedLines
      * @return array
      */
-    public static function merge(array $group) : array
+    public static function merge(array $groupedLines) : array
     {
-        $lines = [];
-        foreach ($group as $part) {
-            $lines = array_merge(
-                $lines,
-                $part['before'],
-                [$part['msgid']],
-                $part['after']
+        $mergedLines = [];
+        foreach ($groupedLines as $group) {
+            $mergedLines = array_merge(
+                $mergedLines,
+                $group['before'],
+                [$group['msgid']],
+                $group['after']
             );
         }
-        return $lines;
+        return $mergedLines;
     }
 
     /**
@@ -75,55 +75,70 @@ final class Sorter
      */
     public static function group(array $lines, bool $format = true) : array
     {
-        $group   = [];
-        $pointer = ['msgid' => '', 'before' => [], 'after' => []];
-        $pos     = 'before';
+        $groupedLines = [];
+        $currentGroup = ['msgid' => '', 'before' => [], 'after' => []];
+        $position = 'before';
 
         foreach ($lines as $line) {
             if ( self::isId($line) ) {
-                $msgid = $line;
-                if ( $format ) {
-                    $msgid = self::extractId($line);
-                    $msgid = "msgid \"{$msgid}\"";
+                $msgid = $format ? self::formatId($line) : $line;
+                $currentGroup['msgid'] = $msgid;
+                $position = 'after';
+
+            } elseif ( self::isPluralString($line) || self::isString($line) ) {
+                $formattedLine = $format ? self::formatString($line) : $line;
+                $currentGroup['after'][] = $formattedLine;
+
+                if ( self::isString($line) ) {
+                    $msgid = self::extractId($currentGroup['msgid']);
+                    $groupedLines[$msgid] = $currentGroup;
+                    $currentGroup = ['msgid' => '', 'before' => [], 'after' => []];
+                    $position = 'before';
                 }
-                $pointer['msgid'] = $msgid;
-                $pos = 'after';
-
-            } elseif ( self::isPluralString($line) ) {
-                $pointer['after'][] = $line;
-
-            } elseif ( self::isString($line) ) {
-                $msgstr = $line;
-                if ( $format ) {
-                    $msgstr = self::extractString($msgstr);
-                    $msgstr = "msgstr \"{$msgstr}\"";
-                }
-                $pointer['after'][] = $msgstr;
-
-                $msgid = self::extractId($pointer['msgid']);
-                $group[$msgid] = $pointer;
-                $pointer = ['msgid' => '', 'before' => [], 'after' => []];
-                $pos = 'before';
 
             } elseif ( $line === '' ) {
-
-                if ( $pos === 'after' ) {
-                    $pointer['after'][] = $line;
-                    $msgid = self::extractId($pointer['msgid']);
-                    $group[$msgid] = $pointer;
-                    $pointer = ['msgid' => '', 'before' => [], 'after' => []];
-                    $pos = 'before';
-
+                if ( $position === 'after' ) {
+                    $currentGroup['after'][] = $line;
+                    $msgid = self::extractId($currentGroup['msgid']);
+                    $groupedLines[$msgid] = $currentGroup;
+                    $currentGroup = ['msgid' => '', 'before' => [], 'after' => []];
+                    $position = 'before';
                 } else {
-                    $pointer['before'][] = $line;
+                    $currentGroup['before'][] = $line;
                 }
 
             } else {
-                $pointer[$pos][] = $line;
+                $currentGroup[$position][] = $line;
             }
         }
 
-        return $group;
+        return $groupedLines;
+    }
+
+    /**
+     * Format message Id from line.
+     *
+     * @access public
+     * @param string $line
+     * @return string
+     */
+    public static function formatId(string $line) : string
+    {
+        $msgid = self::extractId($line);
+        return "msgid \"{$msgid}\"";
+    }
+
+    /**
+     * Format message string from line.
+     *
+     * @access public
+     * @param string $line
+     * @return string
+     */
+    public static function formatString(string $line) : string
+    {
+        $msgstr = self::extractString($line);
+        return "msgstr \"{$msgstr}\"";
     }
 
     /**
@@ -163,7 +178,7 @@ final class Sorter
      */
     public static function isId(string $line) : bool
     {
-        return (strpos($line, 'msgid "') === 0);
+        return strpos($line, 'msgid "') === 0;
     }
 
     /**
@@ -175,7 +190,7 @@ final class Sorter
      */
     public static function isString(string $line) : bool
     {
-        return (strpos($line, 'msgstr "') === 0);
+        return strpos($line, 'msgstr "') === 0;
     }
 
     /**
@@ -187,8 +202,8 @@ final class Sorter
      */
     public static function isPluralString(string $line) : bool
     {
-        $plural = (strpos($line, 'msgid_plural "') === 0);
-        $msgstr = (strpos($line, 'msgstr[') === 0);
-        return ($plural || $msgstr);
+        $plural = strpos($line, 'msgid_plural "') === 0;
+        $msgstr = strpos($line, 'msgstr[') === 0;
+        return $plural || $msgstr;
     }
 }

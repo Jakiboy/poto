@@ -1,21 +1,20 @@
-# Copyright (C) 2024 Example
-# This file is distributed under the same license as the Example plugin.
+# Copyright (C) 2025 Poto
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Example 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/Example\n"
+"Project-Id-Version: Poto 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/Jakiboy/poto/issues\n"
 "POT-Creation-Date: 2024-07-31 14:50+0100\n"
-"PO-Revision-Date: 2024-08-01 08:22+0100\n"
+"PO-Revision-Date: 2025-02-22 21:08+0100\n"
 "Last-Translator: Jihad Sinnaour <mail@jihadsinnaour.com>\n"
-"Language-Team: Example\n"
+"Language-Team: Poto\n"
 "Language: fr_FR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 3.4.4\n"
-"X-Domain: example\n"
+"X-Generator: Poedit 3.5\n"
+"X-Domain: poto\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 #: inc/admin/settings.php:434
@@ -26,16 +25,13 @@ msgstr ""
 msgid "FAQs"
 msgstr ""
 
-#: including msgctxt
-#: inc/admin/settings.php:254
+#: including msgctxt inc/admin/settings.php:254
 msgctxt "placeholder"
 msgid "From&hellip;"
 msgstr ""
 
-#: invalid msgid
-#: inc/admin/settings.php:268
-msgid ""
-"Delete item"
+#: invalid msgid inc/admin/settings.php:268
+msgid "Delete item"
 msgstr ""
 
 #: inc/admin/settings.php:383
@@ -50,15 +46,13 @@ msgstr ""
 msgid "Passing Grade(%)"
 msgstr ""
 
-#: inc/admin/settings.php:424
-#: inc/admin/settings.php:357
+#: inc/admin/settings.php:424 inc/admin/settings.php:357
 msgid "Requirements"
 msgstr ""
 
 #: inc/admin/settings.php:429
 msgid "Target Audience"
 msgstr ""
-
 
 #: inc/admin/settings:70
 msgid "+ Add more"
