@@ -12,3 +12,4 @@
 *.sh export-ignore
 *.po export-ignore
 *.code-workspace export-ignore
+*.png filter=lfs diff=lfs merge=lfs -text
